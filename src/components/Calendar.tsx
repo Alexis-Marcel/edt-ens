@@ -18,6 +18,7 @@ for (const cls of CLASSES) {
 }
 
 function getEventColor(event: TimetableEvent): string {
+  if (event.type === "EXAMEN") return "#dc2626";
   if (event.classes.length === 1) {
     return CLASS_COLORS[event.classes[0]] || "#6b7280";
   }
@@ -85,7 +86,8 @@ export default function Calendar({ events }: CalendarProps) {
           return { html: arg.text };
         }}
         allDaySlot={false}
-        weekends={false}
+        weekends
+        hiddenDays={[0]}
         height="100%"
         slotDuration="00:30:00"
         expandRows

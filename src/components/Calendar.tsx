@@ -11,6 +11,7 @@ import frLocale from "@fullcalendar/core/locales/fr";
 import enLocale from "@fullcalendar/core/locales/en-gb";
 import { useI18n } from "@/lib/i18n";
 import DatePicker from "./DatePicker";
+import EventModal from "./EventModal";
 
 interface CalendarProps {
   events: TimetableEvent[];
@@ -36,6 +37,10 @@ export default function Calendar({ events }: CalendarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [titleEl, setTitleEl] = useState<HTMLElement | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<{
+    title: string; start: Date | null; end: Date | null; backgroundColor: string;
+    location?: string; teacher?: string; group?: string; code?: string; type?: string; classes?: string[];
+  } | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -103,6 +108,9 @@ export default function Calendar({ events }: CalendarProps) {
 
   return (
     <div ref={containerRef} className="min-h-0 flex-1 overflow-auto p-2 md:p-4">
+      {selectedEvent && (
+        <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      )}
       {pickerOpen && (
         <DatePicker
           currentDate={currentCalDate}
@@ -135,6 +143,22 @@ export default function Calendar({ events }: CalendarProps) {
         slotDuration="00:30:00"
         expandRows
         events={fcEvents}
+        eventClick={(info) => {
+          info.jsEvent.preventDefault();
+          const ep = info.event.extendedProps;
+          setSelectedEvent({
+            title: info.event.title,
+            start: info.event.start,
+            end: info.event.end,
+            backgroundColor: info.event.backgroundColor,
+            location: ep.location,
+            teacher: ep.teacher,
+            group: ep.group,
+            code: ep.code,
+            type: ep.type,
+            classes: ep.classes,
+          });
+        }}
         eventContent={renderEventContent}
         slotLabelFormat={{
           hour: "2-digit",
@@ -162,26 +186,26 @@ function renderEventContent(eventInfo: EventContentArg) {
   const startTime = formatTime(eventInfo.event.start);
   const endTime = formatTime(eventInfo.event.end);
   return (
-    <div className="overflow-hidden p-1 text-xs leading-tight">
-      <div className="font-medium opacity-80">{startTime} - {endTime}</div>
-      <div className="font-semibold">{eventInfo.event.title}</div>
-      {teacher && <div className="mt-0.5 opacity-80">{teacher}</div>}
-      {location && <div className="opacity-60">{location}</div>}
+    <div className="h-full cursor-pointer overflow-hidden p-1 text-xs leading-tight">
+      <div className="truncate font-medium opacity-80">{startTime} - {endTime}</div>
+      <div className="truncate font-semibold">{eventInfo.event.title}</div>
+      {teacher && <div className="truncate opacity-80">{teacher}</div>}
+      {location && <div className="truncate opacity-60">{location}</div>}
       {group && typeof group === "string" && group.includes("\n") ? (
-        <div className="mt-0.5 space-y-0.5">
+        <div className="mt-0.5 space-y-0.5 overflow-hidden">
           {group.split("\n").map((line: string, i: number) => (
-            <div key={i} className="rounded bg-white/20 px-1 py-0.5 text-[10px]">
+            <div key={i} className="truncate rounded bg-white/20 px-1 py-0.5 text-[10px]">
               {line}
             </div>
           ))}
         </div>
       ) : group ? (
-        <div className="mt-0.5 inline-block rounded bg-white/20 px-1 py-0.5 text-[10px]">
+        <div className="mt-0.5 truncate rounded bg-white/20 px-1 py-0.5 text-[10px]">
           {group}
         </div>
       ) : null}
       {code && (
-        <div className="text-[10px] opacity-40">{code}</div>
+        <div className="truncate text-[10px] opacity-40">{code}</div>
       )}
     </div>
   );

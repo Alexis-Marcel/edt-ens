@@ -73,7 +73,9 @@ export default function TimetableApp() {
       />
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 md:px-6 md:py-4">
-          <div>
+          <div className="flex items-center gap-3">
+            <img src="/saphire.png" alt="SAPHIRE" className="h-8 w-8 md:h-10 md:w-10" />
+            <div>
             <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
               {t.title}
             </h1>
@@ -81,6 +83,7 @@ export default function TimetableApp() {
               <p className="text-sm text-gray-500 dark:text-gray-400">{t.loading}</p>
             )}
             {error && <p className="text-sm text-red-500">{error}</p>}
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <div className="hidden md:block text-right mr-2">

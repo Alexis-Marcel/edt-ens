@@ -72,6 +72,19 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+.fc .fc-toolbar-title {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.fc .fc-toolbar-title:hover {
+  color: #2563eb;
+}
+
+.dark .fc .fc-toolbar-title:hover {
+  color: #60a5fa;
+}
+
 .fc .fc-col-header-cell {
   padding: 8px 0;
   font-weight: 600;

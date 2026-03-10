@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -10,6 +10,7 @@ import { EventContentArg } from "@fullcalendar/core";
 import frLocale from "@fullcalendar/core/locales/fr";
 import enLocale from "@fullcalendar/core/locales/en-gb";
 import { useI18n } from "@/lib/i18n";
+import DatePicker from "./DatePicker";
 
 interface CalendarProps {
   events: TimetableEvent[];
@@ -30,14 +31,36 @@ function getEventColor(event: TimetableEvent): string {
 
 export default function Calendar({ events }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { locale } = useI18n();
   const [isMobile, setIsMobile] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [titleEl, setTitleEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Make the title clickable to open the date picker
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const titleBtn = container.querySelector(".fc-toolbar-title") as HTMLElement | null;
+    if (!titleBtn) return;
+    titleBtn.style.cursor = "pointer";
+    setTitleEl(titleBtn);
+    const handleClick = () => setPickerOpen((v) => !v);
+    titleBtn.addEventListener("click", handleClick);
+    return () => titleBtn.removeEventListener("click", handleClick);
+  });
+
+  const handleDateSelect = useCallback((date: Date) => {
+    const api = calendarRef.current?.getApi();
+    if (api) api.gotoDate(date);
+    setPickerOpen(false);
   }, []);
 
   useEffect(() => {
@@ -76,8 +99,17 @@ export default function Calendar({ events }: CalendarProps) {
     },
   }));
 
+  const currentCalDate = calendarRef.current?.getApi()?.getDate() ?? new Date();
+
   return (
-    <div className="min-h-0 flex-1 overflow-auto p-2 md:p-4">
+    <div ref={containerRef} className="min-h-0 flex-1 overflow-auto p-2 md:p-4">
+      {pickerOpen && (
+        <DatePicker
+          currentDate={currentCalDate}
+          onSelect={handleDateSelect}
+          anchorEl={titleEl}
+        />
+      )}
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

@@ -15,6 +15,17 @@ export default function TimetableApp() {
     () => new Set(CLASSES.map((c) => c.id))
   );
 
+  // Restore saved selection after hydration
+  useEffect(() => {
+    const saved = localStorage.getItem("selectedClasses");
+    if (saved) {
+      try {
+        const arr = JSON.parse(saved) as string[];
+        if (arr.length > 0) setSelectedClasses(new Set(arr));
+      } catch { /* ignore */ }
+    }
+  }, []);
+
   const fetchEvents = useCallback(async () => {
     try {
       const res = await fetch("/api/timetable");
@@ -42,6 +53,7 @@ export default function TimetableApp() {
       } else {
         next.add(classId);
       }
+      localStorage.setItem("selectedClasses", JSON.stringify([...next]));
       return next;
     });
   }, []);

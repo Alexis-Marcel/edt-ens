@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Calendar from "./Calendar";
+import ThemeToggle from "./ThemeToggle";
+import { useI18n } from "@/lib/i18n";
 import { CLASSES, TimetableEvent } from "@/lib/types";
 
 export default function TimetableApp() {
@@ -10,6 +12,7 @@ export default function TimetableApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const { locale, t, toggleLocale } = useI18n();
 
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(
     () => new Set(CLASSES.map((c) => c.id))
@@ -63,31 +66,40 @@ export default function TimetableApp() {
   });
 
   return (
-    <div className="flex h-screen flex-col md:flex-row bg-gray-50">
+    <div className="flex h-screen flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
       <Sidebar
         selectedClasses={selectedClasses}
         onToggleClass={toggleClass}
       />
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 md:px-6 md:py-4">
+        <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 md:px-6 md:py-4">
           <div>
-            <h1 className="text-lg md:text-xl font-bold text-gray-900">
-              EDT — SAPHIRE
+            <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
+              {t.title}
             </h1>
             {loading && (
-              <p className="text-sm text-gray-500">Chargement...</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t.loading}</p>
             )}
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-400">
-              {lastUpdate
-                ? `MAJ : ${lastUpdate.toLocaleTimeString("fr-FR")}`
-                : ""}
-            </p>
-            <p className="hidden md:block text-xs text-gray-400">
-              {filteredEvents.length} événements
-            </p>
+          <div className="flex items-center gap-1">
+            <div className="hidden md:block text-right mr-2">
+              <p className="text-xs text-gray-400">
+                {lastUpdate
+                  ? `${t.lastUpdate} : ${lastUpdate.toLocaleTimeString(locale === "fr" ? "fr-FR" : "en-GB")}`
+                  : ""}
+              </p>
+              <p className="text-xs text-gray-400">
+                {filteredEvents.length} {t.events}
+              </p>
+            </div>
+            <button
+              onClick={toggleLocale}
+              className="rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+            >
+              {locale === "fr" ? "EN" : "FR"}
+            </button>
+            <ThemeToggle />
           </div>
         </header>
         <Calendar events={filteredEvents} />

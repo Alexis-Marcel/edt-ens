@@ -7,6 +7,9 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { TimetableEvent, CLASSES } from "@/lib/types";
 import { EventContentArg } from "@fullcalendar/core";
+import frLocale from "@fullcalendar/core/locales/fr";
+import enLocale from "@fullcalendar/core/locales/en-gb";
+import { useI18n } from "@/lib/i18n";
 
 interface CalendarProps {
   events: TimetableEvent[];
@@ -27,7 +30,7 @@ function getEventColor(event: TimetableEvent): string {
 
 export default function Calendar({ events }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
-  // JS needed here because FullCalendar doesn't support CSS media queries for view switching
+  const { locale } = useI18n();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -47,6 +50,14 @@ export default function Calendar({ events }: CalendarProps) {
       : { left: "prev,next today", center: "title", right: "timeGridWeek,timeGridDay" }
     );
   }, [isMobile]);
+
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    queueMicrotask(() => {
+      api.setOption("locale", locale === "fr" ? frLocale : enLocale);
+    });
+  }, [locale]);
 
   const fcEvents = events.map((e) => ({
     id: e.id,
@@ -76,7 +87,7 @@ export default function Calendar({ events }: CalendarProps) {
           center: "title",
           right: "timeGridWeek,timeGridDay",
         }}
-        locale="fr"
+        locale={locale === "fr" ? frLocale : enLocale}
         firstDay={1}
         slotMinTime="07:30:00"
         slotMaxTime="18:00:00"

@@ -22,6 +22,19 @@ for (const cls of CLASSES) {
   CLASS_COLORS[cls.id] = cls.color;
 }
 
+function getUrlParams(): { date?: string; view?: string } {
+  if (typeof window === "undefined") return {};
+  const params = new URLSearchParams(window.location.search);
+  return { date: params.get("date") || undefined, view: params.get("view") || undefined };
+}
+
+function updateUrl(date: string, view: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("date", date);
+  url.searchParams.set("view", view);
+  window.history.replaceState({}, "", url.toString());
+}
+
 function getEventColor(event: TimetableEvent): string {
   if (event.type === "EXAMEN") return "#dc2626";
   if (event.classes.length === 1) {
@@ -41,6 +54,7 @@ export default function Calendar({ events }: CalendarProps) {
     title: string; start: Date | null; end: Date | null; backgroundColor: string;
     location?: string; teacher?: string; group?: string; code?: string; type?: string; classes?: string[];
   } | null>(null);
+  const urlParams = useRef(getUrlParams());
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -121,7 +135,13 @@ export default function Calendar({ events }: CalendarProps) {
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
+        initialView={urlParams.current.view || "timeGridWeek"}
+        initialDate={urlParams.current.date || undefined}
+        datesSet={(info) => {
+          const s = info.view.currentStart;
+          const d = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, "0")}-${String(s.getDate()).padStart(2, "0")}`;
+          updateUrl(d, info.view.type);
+        }}
         headerToolbar={{
           left: "prev,next today",
           center: "title",

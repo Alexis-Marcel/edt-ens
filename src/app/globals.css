@@ -38,3 +38,18 @@ body {
 .fc .fc-timegrid-slot {
   height: 2.5em;
 }
+
+/* Mobile: compact toolbar */
+@media (max-width: 767px) {
+  .fc .fc-toolbar {
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+  .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+  .fc .fc-timegrid-slot {
+    height: 2em;
+  }
+}

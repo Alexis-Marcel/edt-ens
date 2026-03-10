@@ -5,7 +5,6 @@ import Sidebar from "./Sidebar";
 import Calendar from "./Calendar";
 import { CLASSES, TimetableEvent } from "@/lib/types";
 
-
 export default function TimetableApp() {
   const [events, setEvents] = useState<TimetableEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,16 +51,16 @@ export default function TimetableApp() {
   });
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen flex-col md:flex-row bg-gray-50">
       <Sidebar
         selectedClasses={selectedClasses}
         onToggleClass={toggleClass}
       />
-      <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 md:px-6 md:py-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Emploi du temps — SAPHIRE
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">
+              EDT — SAPHIRE
             </h1>
             {loading && (
               <p className="text-sm text-gray-500">Chargement...</p>
@@ -71,10 +70,10 @@ export default function TimetableApp() {
           <div className="text-right">
             <p className="text-xs text-gray-400">
               {lastUpdate
-                ? `Dernière MAJ : ${lastUpdate.toLocaleTimeString("fr-FR")}`
+                ? `MAJ : ${lastUpdate.toLocaleTimeString("fr-FR")}`
                 : ""}
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="hidden md:block text-xs text-gray-400">
               {filteredEvents.length} événements
             </p>
           </div>

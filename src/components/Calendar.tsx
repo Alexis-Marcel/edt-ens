@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -20,11 +21,32 @@ function getEventColor(event: TimetableEvent): string {
   if (event.classes.length === 1) {
     return CLASS_COLORS[event.classes[0]] || "#6b7280";
   }
-  // Multi-class (common courses) — use a neutral purple
   return "#8b5cf6";
 }
 
 export default function Calendar({ events }: CalendarProps) {
+  const calendarRef = useRef<FullCalendar>(null);
+  // JS needed here because FullCalendar doesn't support CSS media queries for view switching
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    const view = isMobile ? "timeGridDay" : "timeGridWeek";
+    if (api.view.type !== view) api.changeView(view);
+    api.setOption("headerToolbar", isMobile
+      ? { left: "prev,next", center: "title", right: "today" }
+      : { left: "prev,next today", center: "title", right: "timeGridWeek,timeGridDay" }
+    );
+  }, [isMobile]);
+
   const fcEvents = events.map((e) => ({
     id: e.id,
     title: e.title,
@@ -43,8 +65,9 @@ export default function Calendar({ events }: CalendarProps) {
   }));
 
   return (
-    <div className="flex-1 overflow-auto p-4 min-h-0">
+    <div className="min-h-0 flex-1 overflow-auto p-2 md:p-4">
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"
         headerToolbar={{
@@ -108,12 +131,12 @@ function renderEventContent(eventInfo: EventContentArg) {
           ))}
         </div>
       ) : group ? (
-        <div className="mt-0.5 rounded bg-white/20 px-1 py-0.5 text-[10px] inline-block">
+        <div className="mt-0.5 inline-block rounded bg-white/20 px-1 py-0.5 text-[10px]">
           {group}
         </div>
       ) : null}
       {code && (
-        <div className="opacity-40 text-[10px]">{code}</div>
+        <div className="text-[10px] opacity-40">{code}</div>
       )}
     </div>
   );

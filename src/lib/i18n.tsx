@@ -10,6 +10,7 @@ interface Translations {
   loading: string;
   lastUpdate: string;
   events: string;
+  rawView: string;
 }
 
 const translations: Record<Locale, Translations> = {
@@ -19,6 +20,7 @@ const translations: Record<Locale, Translations> = {
     loading: "Chargement...",
     lastUpdate: "MAJ",
     events: "événements",
+    rawView: "Vue brute",
   },
   en: {
     title: "Timetable — SAPHIRE",
@@ -26,6 +28,7 @@ const translations: Record<Locale, Translations> = {
     loading: "Loading...",
     lastUpdate: "Updated",
     events: "events",
+    rawView: "Raw view",
   },
 };
 

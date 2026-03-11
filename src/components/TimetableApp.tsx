@@ -7,6 +7,9 @@ import ThemeToggle from "./ThemeToggle";
 import { useI18n } from "@/lib/i18n";
 import { CLASSES, TimetableEvent } from "@/lib/types";
 
+const SPREADSHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUcpMyhtvJxa8F-_HLUV4TzRId3vT5pv_PQuphKtdZqg-2QWikElY0_TSX_TY4aA/pubhtml?gid=819491925&single=true";
+
 export default function TimetableApp() {
   const [events, setEvents] = useState<TimetableEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,9 +64,9 @@ export default function TimetableApp() {
     });
   }, []);
 
-  const filteredEvents = events.filter((event) => {
-    return event.classes.some((c) => selectedClasses.has(c));
-  });
+  const filteredEvents = events.filter((event) =>
+    event.classes.some((c) => selectedClasses.has(c))
+  );
 
   return (
     <div className="flex h-screen flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
@@ -96,6 +99,14 @@ export default function TimetableApp() {
                 {filteredEvents.length} {t.events}
               </p>
             </div>
+            <a
+              href={SPREADSHEET_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+            >
+              {t.rawView}
+            </a>
             <button
               onClick={toggleLocale}
               className="rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"

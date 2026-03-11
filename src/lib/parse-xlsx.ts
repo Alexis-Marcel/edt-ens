@@ -155,10 +155,10 @@ function extractMultiRooms(text: string): { name: string; room: string }[] | nul
 }
 
 function extractTeacher(text: string): string | null {
-  // Match patterns like "A. Sergent", "M. Chapon", "B. Durand", "C. De Sa"
-  // Also "G. Le Guern", multi-part last names
+  // Match patterns like "A. Sergent", "M. Chapon", "C. De Sa", "J. Bourgain-Wilbal"
+  // Supports multi-part last names and hyphenated names
   const teachers: string[] = [];
-  const re = /\b([A-Z])\.\s*([A-ZÀ-Ü][a-zà-ü]+(?:[ \t]+[A-ZÀ-Ü][a-zà-ü]+)*)\b/g;
+  const re = /\b([A-Z])\.\s*([A-ZÀ-Ü][a-zà-ü]+(?:-[A-ZÀ-Ü][a-zà-ü]+)*(?:[ \t]+[A-ZÀ-Ü][a-zà-ü]+(?:-[A-ZÀ-Ü][a-zà-ü]+)*)*)\b/g;
   let m;
   while ((m = re.exec(text)) !== null) {
     teachers.push(`${m[1]}. ${m[2]}`);

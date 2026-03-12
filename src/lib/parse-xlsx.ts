@@ -114,9 +114,9 @@ function extractCourseType(text: string): string | null {
 
 function extractLocation(text: string): string | null {
   // Match room patterns like "salle 1O07**", "1Z14**", "Amphi 1B26"
-  const salleMatch = text.match(/salle\s+([\w/*]+\**)/i);
+  const salleMatch = text.match(/salle\s*([\w/*]+\**)/i);
   if (salleMatch) return salleMatch[1];
-  const roomMatch = text.match(/\b([O\dM][A-Z]\d{2}[a-z]?\**)(?:\s*\(([^)]+)\))?/);
+  const roomMatch = text.match(/\b([O\dM][A-GI-Z]\d{2}[a-z]?\**)(?:\s*\(([^)]+)\))?/);
   if (roomMatch) {
     // Normalize O (letter) to 0 (zero) — CSV sometimes has O instead of 0
     const room = roomMatch[1].replace(/^O/, "0");
@@ -138,7 +138,7 @@ function extractLocation(text: string): string | null {
 function extractMultiRooms(text: string): { name: string; room: string }[] | null {
   if (!text.match(/salles?\s+/i)) return null;
 
-  const roomRe = /\b([O\dM][A-Z]\d{2}[a-z]?\**)(?:\s*\(([^)]+)\))?/g;
+  const roomRe = /\b([O\dM][A-GI-Z]\d{2}[a-z]?\**)(?:\s*\(([^)]+)\))?/g;
   const results: { name: string; room: string }[] = [];
   let m;
   while ((m = roomRe.exec(text)) !== null) {
@@ -187,7 +187,7 @@ function extractEnglishGroups(text: string): EnglishGroup[] {
       const level = match[1].trim();
       const teacherMatch = part.slice(part.indexOf(match[1]) + match[1].length).match(/\s+([A-Z][\.\w]*\s+[\w]+)/);
       const teacher = teacherMatch ? teacherMatch[1].trim() : "";
-      const roomMatch = part.match(/\b(\d[A-Z]\d{2}\**)\b/);
+      const roomMatch = part.match(/\b(\d[A-GI-Z]\d{2}\**)\b/);
       const location = roomMatch ? roomMatch[1] : "";
       groups.push({ level, teacher, location });
     }
@@ -198,7 +198,7 @@ function extractEnglishGroups(text: string): EnglishGroup[] {
 function extractExplicitTimeRange(
   text: string,
 ): { startH: number; startM: number; endH: number; endM: number } | null {
-  // Match patterns like "8h00-11h00", "9h-11h", "13h30-16h30", "8h30-12h45"
+  // Match full range patterns like "8h00-11h00", "9h-11h", "13h30-16h30"
   const match = text.match(
     /(\d{1,2})h(\d{2})?\s*[-–]\s*(\d{1,2})h(\d{2})?/
   );
@@ -207,10 +207,21 @@ function extractExplicitTimeRange(
   const startM = match[2] ? parseInt(match[2]) : 0;
   const endH = parseInt(match[3]);
   const endM = match[4] ? parseInt(match[4]) : 0;
-  // Sanity check: must be a valid time range
   if (startH < 7 || startH > 20 || endH < 7 || endH > 20) return null;
   if (endH < startH || (endH === startH && endM <= startM)) return null;
   return { startH, startM, endH, endM };
+}
+
+function extractExplicitStartTime(
+  text: string,
+): { startH: number; startM: number } | null {
+  // Match "Début 8h30", "début 9h", "Debut 8H30", etc.
+  const match = text.match(/[Dd][ée]but\s+(\d{1,2})[hH](\d{2})?/);
+  if (!match) return null;
+  const startH = parseInt(match[1]);
+  const startM = match[2] ? parseInt(match[2]) : 0;
+  if (startH < 7 || startH > 20) return null;
+  return { startH, startM };
 }
 
 function isSkippable(text: string): boolean {
@@ -343,12 +354,13 @@ function createEvent(
   const type = extractCourseType(text);
   const location = extractLocation(text) || extractLocation(detailText);
 
-  // Try to extract explicit time range from text
+  // Try to extract explicit time range or start time from text
   const fullText = text + " " + detailText;
   const explicitTime = extractExplicitTimeRange(fullText);
+  const explicitStart = !explicitTime ? extractExplicitStartTime(fullText) : null;
 
-  const startH = explicitTime ? explicitTime.startH : timeInfo.startH;
-  const startM = explicitTime ? explicitTime.startM : timeInfo.startM;
+  const startH = explicitTime ? explicitTime.startH : (explicitStart ? explicitStart.startH : timeInfo.startH);
+  const startM = explicitTime ? explicitTime.startM : (explicitStart ? explicitStart.startM : timeInfo.startM);
   const endH = explicitTime ? explicitTime.endH : (endOverride ? endOverride.endH : timeInfo.endH);
   const endM = explicitTime ? explicitTime.endM : (endOverride ? endOverride.endM : timeInfo.endM);
 
@@ -409,7 +421,7 @@ function createEvent(
   // Extract teacher from main text or detail text
   const teacher = extractTeacher(text) || extractTeacher(detailText);
 
-  const textGroup = extractGroup(text);
+  const textGroup = extractGroup(text) || extractGroup(detailText);
   const finalGroup = group || textGroup;
 
   return [{
@@ -466,7 +478,8 @@ export async function fetchAndParseXlsx(): Promise<TimetableEvent[]> {
           : -1;
 
         // Helper: check if a column should be a 2h or 4h event
-        function checkMerge(colOffset: number, track: TrackRange): { endH: number; endM: number } | undefined {
+        // Returns end time override and optional extra row indices for detail gathering
+        function checkMerge(colOffset: number, _track: TrackRange): { endH: number; endM: number; extraRows?: number[] } | undefined {
           if (!pair || nextRowIdx < 0) return undefined;
           if (consumed.has(`${colOffset}-${slot}`)) return undefined;
 
@@ -488,7 +501,6 @@ export async function fetchAndParseXlsx(): Promise<TimetableEvent[]> {
               const fourthCell = cell(rows, fourthRowIdx, week.baseCol + colOffset);
 
               // Check if the same course code appears in ANY column at the third row
-              // (means there's a separate event at that slot, not a 4h continuation)
               let sameCodeElsewhere = false;
               for (let off = 0; off < 18; off++) {
                 if (off === colOffset) continue;
@@ -499,12 +511,17 @@ export async function fetchAndParseXlsx(): Promise<TimetableEvent[]> {
                 }
               }
 
-              if ((!thirdCell || !thirdCode) && !fourthCell && !sameCodeElsewhere) {
+              const fourthCode = fourthCell ? extractCourseCode(fourthCell) : null;
+              if (
+                (!thirdCell || !thirdCode) &&
+                (!fourthCell || !fourthCode) &&
+                !sameCodeElsewhere
+              ) {
                 const thirdSlot = TIME_SLOT_OFFSETS.find((t) => t.offset === quad.secondPairSlots[0])?.slot;
                 const fourthSlot = TIME_SLOT_OFFSETS.find((t) => t.offset === quad.secondPairSlots[1])?.slot;
                 if (thirdSlot) consumed.add(`${colOffset}-${thirdSlot}`);
                 if (fourthSlot) consumed.add(`${colOffset}-${fourthSlot}`);
-                return { endH: quad.endH, endM: quad.endM };
+                return { endH: quad.endH, endM: quad.endM, extraRows: [thirdRowIdx, fourthRowIdx] };
               }
             }
 
@@ -543,21 +560,22 @@ export async function fetchAndParseXlsx(): Promise<TimetableEvent[]> {
               detail = detail ? `${detail} - ${ac.text}` : ac.text;
             }
 
-            // Also gather detail from next row if merged
+            // Also gather detail from merged rows (next row + quad extra rows)
             if (merge && nextRowIdx > 0) {
-              // Build set of columns that have a different main course
               const otherMainCols = new Set(mainCols.filter((m) => m.col !== mc.col && m.code !== mc.code).map((m) => m.col));
-              for (let off = track.min; off <= track.max; off++) {
-                // Skip columns that belong to a different course in this slot
-                if (otherMainCols.has(off)) continue;
-                const nextText = cell(rows, nextRowIdx, week.baseCol + off);
-                if (!nextText) continue;
-                const nextCode = extractCourseCode(nextText);
-                if (nextCode && nextCode !== mc.code) continue;
-                if (off === mc.col && (!nextCode || nextCode === mc.code)) {
-                  detail = detail || nextText;
-                } else if (off !== mc.col) {
-                  detail = detail ? `${detail} - ${nextText}` : nextText;
+              const detailRows = [nextRowIdx, ...(merge.extraRows || [])];
+              for (const detailRowIdx of detailRows) {
+                for (let off = track.min; off <= track.max; off++) {
+                  if (otherMainCols.has(off)) continue;
+                  const rowText = cell(rows, detailRowIdx, week.baseCol + off);
+                  if (!rowText) continue;
+                  const rowCode = extractCourseCode(rowText);
+                  if (rowCode && rowCode !== mc.code) continue;
+                  if (off === mc.col && (!rowCode || rowCode === mc.code)) {
+                    detail = detail ? `${detail} - ${rowText}` : rowText;
+                  } else if (off !== mc.col) {
+                    detail = detail ? `${detail} - ${rowText}` : rowText;
+                  }
                 }
               }
             }

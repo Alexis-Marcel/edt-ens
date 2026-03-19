@@ -549,33 +549,42 @@ export async function fetchAndParseXlsx(): Promise<TimetableEvent[]> {
           const mainCols = activeCols.filter((c) => c.code);
           if (mainCols.length === 0) continue;
 
+          // Helper: for a given offset, find the nearest main col offset
+          const nearestMain = (off: number) =>
+            mainCols.reduce((best, m) =>
+              Math.abs(m.col - off) < Math.abs(best - off) ? m.col : best,
+              mainCols[0].col,
+            );
+
           for (const mc of mainCols) {
             const merge = checkMerge(mc.col, track);
 
-            // Gather detail from other columns without a different code
+            // Gather detail from other columns in the same row
+            // Skip other main cols (they are their own events)
+            // For detail cols, associate with the nearest main col
             let detail = "";
             for (const ac of activeCols) {
               if (ac.col === mc.col) continue;
-              if (ac.code && ac.code !== mc.code) continue; // different course, skip
+              if (ac.code) continue; // another main col — its own event
+              if (mainCols.length > 1 && nearestMain(ac.col) !== mc.col) continue;
               detail = detail ? `${detail} - ${ac.text}` : ac.text;
             }
 
             // Also gather detail from merged rows (next row + quad extra rows)
             if (merge && nextRowIdx > 0) {
-              const otherMainCols = new Set(mainCols.filter((m) => m.col !== mc.col && m.code !== mc.code).map((m) => m.col));
+              // Exclude ALL other main cols (not just those with a different code)
+              const otherMainCols = new Set(mainCols.filter((m) => m.col !== mc.col).map((m) => m.col));
               const detailRows = [nextRowIdx, ...(merge.extraRows || [])];
               for (const detailRowIdx of detailRows) {
                 for (let off = track.min; off <= track.max; off++) {
                   if (otherMainCols.has(off)) continue;
+                  // Only gather cols nearest to this main col
+                  if (mainCols.length > 1 && nearestMain(off) !== mc.col) continue;
                   const rowText = cell(rows, detailRowIdx, week.baseCol + off);
                   if (!rowText) continue;
                   const rowCode = extractCourseCode(rowText);
                   if (rowCode && rowCode !== mc.code) continue;
-                  if (off === mc.col && (!rowCode || rowCode === mc.code)) {
-                    detail = detail ? `${detail} - ${rowText}` : rowText;
-                  } else if (off !== mc.col) {
-                    detail = detail ? `${detail} - ${rowText}` : rowText;
-                  }
+                  detail = detail ? `${detail} - ${rowText}` : rowText;
                 }
               }
             }

@@ -50,6 +50,36 @@ export const COURSE_NAMES: Record<string, string> = {
   "245": "Physique procédés fabrication",
 };
 
+// Color per course code (used to color events in the calendar)
+export const COURSE_COLORS: Record<string, string> = {
+  "207": "#06b6d4", // Anglais — cyan
+  "208": "#6366f1", // Défis pluridisciplinaires — indigo
+  "211": "#14b8a6", // Identification et optimisation — teal
+  "212": "#475569", // Modélisation solides — slate
+  "213": "#0ea5e9", // Modélisation fluides — sky
+  "214": "#84cc16", // Physique statistique — lime
+  "215": "#be185d", // Probabilités — rose foncé
+  "221": "#a16207", // Comportement ouvrages — amber foncé
+  "222": "#059669", // Éco-conception habitat — emerald
+  "223": "#15803d", // Conception structures acier — vert foncé
+  "224": "#c2410c", // Matériaux et structures béton — orange foncé
+  "225": "#78716c", // Transfert milieux poreux — stone
+  "231": "#6b21a8", // Électronique numérique — violet foncé
+  "232": "#1e3a8a", // Physique semi-conducteurs — bleu foncé
+  "233": "#d946ef", // Traitement de l'énergie — fuchsia
+  "234": "#2563eb", // Signaux et commande — bleu
+  "235": "#fb923c", // Électromagnétisme — orange clair
+  "240": "#6b7280", // AutoFormation Catia — gris
+  "241": "#4ade80", // Ingénierie de Conception — vert clair
+  "242": "#52525b", // Mécanismes et contact — zinc
+  "243": "#dc2626", // Modélisation géométrique — rouge
+  "244": "#ec4899", // Commande mécatronique — rose
+  "245": "#7f1d1d", // Physique procédés fabrication — bordeaux
+};
+
+// Color used for "Projet" events (no course code)
+export const PROJECT_COLOR = "#eab308"; // jaune
+
 // Which classes each course belongs to
 export const COURSE_CLASSES: Record<string, string[]> = {
   "207": ["GC", "GM", "GE"],

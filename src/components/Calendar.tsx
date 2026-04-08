@@ -5,7 +5,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { TimetableEvent, CLASSES } from "@/lib/types";
+import { TimetableEvent, COURSE_COLORS, PROJECT_COLOR } from "@/lib/types";
 import { EventContentArg } from "@fullcalendar/core";
 import frLocale from "@fullcalendar/core/locales/fr";
 import enLocale from "@fullcalendar/core/locales/en-gb";
@@ -15,11 +15,6 @@ import EventModal from "./EventModal";
 
 interface CalendarProps {
   events: TimetableEvent[];
-}
-
-const CLASS_COLORS: Record<string, string> = {};
-for (const cls of CLASSES) {
-  CLASS_COLORS[cls.id] = cls.color;
 }
 
 function getUrlParams(): { date?: string; view?: string } {
@@ -36,11 +31,10 @@ function updateUrl(date: string, view: string) {
 }
 
 function getEventColor(event: TimetableEvent): string {
-  if (event.type === "EXAMEN") return "#dc2626";
-  if (event.classes.length === 1) {
-    return CLASS_COLORS[event.classes[0]] || "#6b7280";
-  }
-  return "#8b5cf6";
+  // Projects (no course code, or title starts with "Projet") → yellow
+  const codeNum = event.code.replace(/^UE/, "");
+  if (!codeNum || /^projet/i.test(event.title)) return PROJECT_COLOR;
+  return COURSE_COLORS[codeNum] || "#6b7280";
 }
 
 export default function Calendar({ events }: CalendarProps) {

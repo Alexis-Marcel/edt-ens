@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Calendar from "./Calendar";
 import ThemeToggle from "./ThemeToggle";
+import ExportMenu from "./ExportMenu";
 import { useI18n } from "@/lib/i18n";
 import { CLASSES, TimetableEvent } from "@/lib/types";
 
@@ -107,6 +108,7 @@ export default function TimetableApp() {
             >
               {t.rawView}
             </a>
+            <ExportMenu selectedClasses={selectedClasses} />
             <button
               onClick={toggleLocale}
               className="rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"

@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 import Calendar from "./Calendar";
 import ThemeToggle from "./ThemeToggle";
 import ExportMenu from "./ExportMenu";
+import MobileMenu from "./MobileMenu";
 import { useI18n } from "@/lib/i18n";
 import { CLASSES, TimetableEvent } from "@/lib/types";
 
@@ -16,6 +17,7 @@ export default function TimetableApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { locale, t, toggleLocale } = useI18n();
 
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(
@@ -76,21 +78,23 @@ export default function TimetableApp() {
         onToggleClass={toggleClass}
       />
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 md:px-6 md:py-4">
-          <div className="flex items-center gap-3">
-            <img src="/saphire.png" alt="SAPHIRE" className="h-8 w-8 md:h-10 md:w-10" />
-            <div>
-            <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
-              {t.title}
-            </h1>
-            {loading && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t.loading}</p>
-            )}
-            {error && <p className="text-sm text-red-500">{error}</p>}
+        <header className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 md:px-6 md:py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src="/saphire.png" alt="SAPHIRE" className="h-8 w-8 shrink-0 md:h-10 md:w-10" />
+            <div className="min-w-0">
+              <h1 className="truncate text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
+                {t.title}
+              </h1>
+              {loading && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t.loading}</p>
+              )}
+              {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="hidden md:block text-right mr-2">
+
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-1">
+            <div className="text-right mr-2">
               <p className="text-xs text-gray-400">
                 {lastUpdate
                   ? `${t.lastUpdate} : ${lastUpdate.toLocaleTimeString(locale === "fr" ? "fr-FR" : "en-GB")}`
@@ -117,9 +121,30 @@ export default function TimetableApp() {
             </button>
             <ThemeToggle />
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+            className="md:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6">
+              <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm1 4a1 1 0 100 2h12a1 1 0 100-2H4z" clipRule="evenodd" />
+            </svg>
+          </button>
         </header>
+
         <Calendar events={filteredEvents} />
       </main>
+
+      <MobileMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        selectedClasses={selectedClasses}
+        onToggleClass={toggleClass}
+        spreadsheetUrl={SPREADSHEET_URL}
+      />
     </div>
   );
 }
